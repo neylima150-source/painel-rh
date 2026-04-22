@@ -105,7 +105,7 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('painel',this)">Painel</button>
-  <button class="tab" onclick="showTab('upload',this)">Importar currículos</button>
+  <button class="tab" onclick="showTab('upload',this)">Importar curriculos</button>
   <button class="tab" onclick="showTab('lista',this)">Candidatos</button>
 </div>
 
@@ -249,7 +249,7 @@ const ETAPAS=[
   {id:"analisado",   label:"Analisado (arquivo)",  cor:"#5F5E5A",bg:"#F1EFE8"},
 ];
 const EM=Object.fromEntries(ETAPAS.map(e=>[e.id,e]));
-const DEPTO_KEYS={"produção":"Produção","producao":"Produção","vendas":"Vendas","comercial":"Vendas","adm":"ADM","administrativo":"ADM","rh":"RH","ti":"TI","tecnologia":"TI","qualidade":"Qualidade","financeiro":"Financeiro","logística":"Logística","logistica":"Logística"};
+const DEPTO_KEYS={"producao":"Producao","producao":"Produção","vendas":"Vendas","comercial":"Vendas","adm":"ADM","administrativo":"ADM","rh":"RH","ti":"TI","tecnologia":"TI","qualidade":"Qualidade","financeiro":"Financeiro","logistica":"Logistica","logistica":"Logística"};
 const SUBETAPA_KEYS={"chamado entrevista":"chamado","chamado":"chamado","entrevistado":"entrevistado","entrevistados":"entrevistado","aprovado":"aprovado","aprovados":"aprovado"};
 
 let candidatos=[];
@@ -320,8 +320,8 @@ async function processarArquivos(files,etapaBase,deptoFixo){
 async function handleFolder(files,etapaBase,cntId){
   if(processando)return;processando=true;
   const n=await processarArquivos(files,etapaBase,undefined);
-  document.getElementById(cntId).textContent=n+" arquivo"+(n!==1?"s")+" importado"+(n!==1?"s":"");
-  document.getElementById("success-msg").textContent=`✓ ${n} currículo${n!==1?"s":""} adicionado${n!==1?"s":""}!`;
+  var plural=n!==1?"s":"";document.getElementById(cntId).textContent=n+" arquivo"+plural+" importado"+plural;
+  document.getElementById("success-msg").textContent="OK: "+n+" curriculo"+(n!==1?"s":"")+" adicionado"+(n!==1?"s":"")+"!";
   processando=false;
 }
 
@@ -330,7 +330,7 @@ async function handleAvulso(files){
   const depto=document.getElementById("av-depto").value;
   const etapa=document.getElementById("av-etapa").value;
   const n=await processarArquivos(files,etapa,depto||"");
-  document.getElementById("success-msg").textContent=`✓ ${n} currículo${n!==1?"s":""} adicionado${n!==1?"s":""}!`;
+  document.getElementById("success-msg").textContent="OK: "+n+" curriculo"+(n!==1?"s":"")+" adicionado"+(n!==1?"s":"")+"!";
   document.getElementById("f-avulso").value="";
   processando=false;
 }
@@ -351,7 +351,7 @@ function onDrop(e,etapaBase){
       await postCandidato({filename:f.name,caminho:rel,ext:f.name.split(".").pop().toLowerCase(),departamento:detectDepto(rel),etapa:detectSubetapa(rel,etapaBase),adicionado:new Date().toLocaleDateString("pt-BR"),base64:b64});
     }
     document.getElementById("prog-area").style.display="none";
-    document.getElementById("success-msg").textContent=`✓ ${all.length} importado${all.length!==1?"s":""}!`;
+    document.getElementById("success-msg").textContent="OK: "+all.length} importado${all.length!==1?"s":""}!`;
     await fetchCandidatos();processando=false;
   });
 }
@@ -371,11 +371,11 @@ function renderPainel(){
   const sem=candidatos.filter(c=>!c.departamento);
   let rows=deptos.map(d=>{
     const tot=candidatos.filter(c=>c.departamento===d).length;
-    const cols=ETAPAS.map(e=>{const n=candidatos.filter(c=>c.departamento===d&&c.etapa===e.id).length;return`<td class="c">${n||"—"}</td>`;}).join("");
+    const cols=ETAPAS.map(e=>{const n=candidatos.filter(c=>c.departamento===d&&c.etapa===e.id).length;return`<td class="c">${n||"---"}</td>`;}).join("");
     return`<tr><td><strong>${esc(d)}</strong></td><td class="c">${tot}</td>${cols}</tr>`;
   }).join("");
-  if(sem.length){const cols=ETAPAS.map(e=>{const n=sem.filter(c=>c.etapa===e.id).length;return`<td class="c">${n||"—"}</td>`;}).join("");rows+=`<tr><td style="color:#9ca3af">Sem departamento</td><td class="c">${sem.length}</td>${cols}</tr>`;}
-  document.getElementById("depto-body").innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum candidato ainda — vá em "Importar currículos"</td></tr>`;
+  if(sem.length){const cols=ETAPAS.map(e=>{const n=sem.filter(c=>c.etapa===e.id).length;return`<td class="c">${n||"---"}</td>`;}).join("");rows+=`<tr><td style="color:#9ca3af">Sem departamento</td><td class="c">${sem.length}</td>${cols}</tr>`;}
+  document.getElementById("depto-body").innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum candidato ainda — vá em "Importar curriculos"</td></tr>`;
 }
 
 function renderLista(){
@@ -397,7 +397,7 @@ function renderLista(){
       <div class="avatar" style="background:${avatarCor(c.nome)}">${initials(c.nome)}</div>
       <div class="cand-info">
         <div class="cand-nome">${esc(c.nome||c.filename)}</div>
-        <div class="cand-sub">${esc(c.cargo||"—")} · ${esc(c.departamento||"Sem departamento")}</div>
+        <div class="cand-sub">${esc(c.cargo||"---")} · ${esc(c.departamento||"Sem departamento")}</div>
       </div>
       <span class="badge" style="background:${e.bg};color:${e.cor};border:1px solid ${e.cor}30">${e.label}</span>
     </div>`;
@@ -416,12 +416,12 @@ function openModal(id){
   document.getElementById("m-av").style.background=avatarCor(c.nome);
   document.getElementById("m-av").textContent=initials(c.nome);
   document.getElementById("m-nome").textContent=c.nome||c.filename;
-  document.getElementById("m-cargo").textContent=(c.cargo||"—")+" · "+(c.departamento||"Sem departamento");
+  document.getElementById("m-cargo").textContent=(c.cargo||"---")+" - "+(c.departamento||"Sem departamento");
   document.getElementById("m-grid").innerHTML=[
     ["Etapa",`<span class="badge" style="background:${e.bg};color:${e.cor}">${e.label}</span>`],
-    ["Departamento",esc(c.departamento||"—")],
-    ["E-mail",esc(c.email||"—")],["Telefone",esc(c.telefone||"—")],
-    ["Adicionado",esc(c.adicionado||"—")],["Arquivo",esc(c.filename||"—")]
+    ["Departamento",esc(c.departamento||"---")],
+    ["E-mail",esc(c.email||"---")],["Telefone",esc(c.telefone||"---")],
+    ["Adicionado",esc(c.adicionado||"---")],["Arquivo",esc(c.filename||"---")]
   ].map(([k,v])=>`<div class="info-cell"><div class="key">${k}</div><div class="val">${v}</div></div>`).join("");
   const rb=document.getElementById("m-resumo");
   if(c.resumo){rb.style.display="block";document.getElementById("m-resumo-txt").textContent=c.resumo;}else rb.style.display="none";
