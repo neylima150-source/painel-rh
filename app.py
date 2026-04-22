@@ -18,8 +18,6 @@ HEADERS = {
     "Prefer": "return=representation",
 }
 
-# ── Supabase helpers ──────────────────────────────────────────────────────────
-
 def sb_get(table, params=None):
     url = f"{SUPABASE_URL}/rest/v1/{table}"
     r = httpx.get(url, headers=HEADERS, params=params, timeout=15)
@@ -45,53 +43,33 @@ def sb_delete(table, record_id):
                      params={"id": f"eq.{record_id}"}, timeout=15)
     r.raise_for_status()
 
-# ── Anthropic extract ─────────────────────────────────────────────────────────
-
 def extract_with_ai(base64_data, filename):
-    ext = filename.rsplit(".", 1)[-1].lower()
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
     is_image = ext in ("jpg", "jpeg", "png")
     is_pdf = ext == "pdf"
-
     if not is_image and not is_pdf:
-        return {"nome": filename.rsplit(".", 1)[0], "email": "—",
-                "telefone": "—", "cargo": "—", "resumo": ""}
-
+        return {}
     if is_image:
         media_type = "image/png" if ext == "png" else "image/jpeg"
         content = [
-            {"type": "image", "source": {"type": "base64",
-             "media_type": media_type, "data": base64_data}},
-            {"type": "text", "text": "Currículo. Retorne SOMENTE JSON: "
-             '{"nome":"","email":"","telefone":"","cargo":"","resumo":""}'}
+            {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": base64_data}},
+            {"type": "text", "text": "Curriculo. Retorne SOMENTE JSON: {\"nome\":\"\",\"email\":\"\",\"telefone\":\"\",\"cargo\":\"\",\"resumo\":\"\"}"}
         ]
     else:
         content = [
-            {"type": "document", "source": {"type": "base64",
-             "media_type": "application/pdf", "data": base64_data}},
-            {"type": "text", "text": "Currículo. Retorne SOMENTE JSON: "
-             '{"nome":"","email":"","telefone":"","cargo":"","resumo":""}'}
+            {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": base64_data}},
+            {"type": "text", "text": "Curriculo. Retorne SOMENTE JSON: {\"nome\":\"\",\"email\":\"\",\"telefone\":\"\",\"cargo\":\"\",\"resumo\":\"\"}"}
         ]
-
-    try:
-        r = httpx.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": ANTHROPIC_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={"model": "claude-opus-4-5", "max_tokens": 400,
-                  "messages": [{"role": "user", "content": content}]},
-            timeout=60,
-        )
-        text = r.json()["content"][0]["text"]
-        text = text.replace("```json", "").replace("```", "").strip()
-        return json.loads(text)
-    except Exception as e:
-        return {"nome": filename, "email": "—", "telefone": "—",
-                "cargo": "—", "resumo": f"Erro: {e}"}
-
-# ── Routes ────────────────────────────────────────────────────────────────────
+    r = httpx.post(
+        "https://api.anthropic.com/v1/messages",
+        headers={"x-api-key": ANTHROPIC_KEY, "anthropic-version": "2023-06-01", "content-type": "application/json"},
+        json={"model": "claude-haiku-4-5-20251001", "max_tokens": 400, "messages": [{"role": "user", "content": content}]},
+        timeout=60,
+    )
+    r.raise_for_status()
+    text = r.json()["content"][0]["text"]
+    text = text.replace("```json", "").replace("```", "").strip()
+    return json.loads(text)
 
 @app.route("/")
 def index():
@@ -99,37 +77,53 @@ def index():
 
 @app.route("/api/candidatos", methods=["GET"])
 def get_candidatos():
-    data = sb_get("candidatos", {"order": "created_at.desc", "limit": "1000"})
-    return jsonify(data)
+    try:
+        data = sb_get("candidatos", {"order": "created_at.desc", "limit": "1000"})
+        return jsonify(data)
+    except Exception as e:
+        print(f"GET error: {e}")
+        return jsonify([]), 200
 
 @app.route("/api/candidatos", methods=["POST"])
 def add_candidato():
-    payload = request.json
-    base64_data = payload.pop("base64", None)
-    filename = payload.get("filename", "")
-
-    if base64_data:
-        info = extract_with_ai(base64_data, filename)
+    try:
+        payload = request.json.copy()
+        base64_data = payload.pop("base64", None)
+        filename = payload.get("filename", "arquivo")
+        info = {}
+        if base64_data:
+            try:
+                info = extract_with_ai(base64_data, filename)
+            except Exception as e:
+                print(f"AI error for {filename}: {e}")
         payload.update({
             "nome":     info.get("nome") or filename.rsplit(".", 1)[0],
-            "email":    info.get("email") or "—",
-            "telefone": info.get("telefone") or "—",
-            "cargo":    info.get("cargo") or "—",
+            "email":    info.get("email") or "-",
+            "telefone": info.get("telefone") or "-",
+            "cargo":    info.get("cargo") or "-",
             "resumo":   info.get("resumo") or "",
         })
-
-    result = sb_post("candidatos", payload)
-    return jsonify(result), 201
+        result = sb_post("candidatos", payload)
+        return jsonify(result), 201
+    except Exception as e:
+        print(f"POST error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/candidatos/<record_id>", methods=["PATCH"])
 def update_candidato(record_id):
-    data = sb_patch("candidatos", record_id, request.json)
-    return jsonify(data)
+    try:
+        data = sb_patch("candidatos", record_id, request.json)
+        return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/candidatos/<record_id>", methods=["DELETE"])
 def delete_candidato(record_id):
-    sb_delete("candidatos", record_id)
-    return jsonify({"ok": True})
+    try:
+        sb_delete("candidatos", record_id)
+        return jsonify({"ok": True})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
