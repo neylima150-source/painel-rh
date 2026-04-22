@@ -351,7 +351,7 @@ function onDrop(e,etapaBase){
       await postCandidato({filename:f.name,caminho:rel,ext:f.name.split(".").pop().toLowerCase(),departamento:detectDepto(rel),etapa:detectSubetapa(rel,etapaBase),adicionado:new Date().toLocaleDateString("pt-BR"),base64:b64});
     }
     document.getElementById("prog-area").style.display="none";
-    document.getElementById("success-msg").textContent="OK: "+all.length} importado${all.length!==1?"s":""}!`;
+    document.getElementById("success-msg").textContent="OK: "+all.length+" importado"+(all.length!==1?"s":"")+"!";
     await fetchCandidatos();processando=false;
   });
 }
