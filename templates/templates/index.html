@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Painel RH — CIMENTMARE</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:#f8f9fa;color:#1a1a1a;min-height:100vh;}
+header{background:#fff;border-bottom:1px solid #e5e7eb;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.logo{font-size:15px;font-weight:600;color:#1a1a1a;}
+.logo span{color:#185FA5;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.pulse{width:8px;height:8px;border-radius:50%;background:#10b981;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+.live-label{font-size:12px;color:#6b7280;}
+.tabs{display:flex;gap:4px;padding:16px 24px 0;}
+.tab{padding:8px 18px;border-radius:8px 8px 0 0;border:1px solid #e5e7eb;border-bottom:none;cursor:pointer;font-size:13px;background:#f3f4f6;color:#6b7280;font-family:inherit;}
+.tab.active{background:#fff;color:#1a1a1a;font-weight:500;}
+.content{background:#fff;border:1px solid #e5e7eb;border-radius:0 8px 8px 8px;margin:0 24px 24px;padding:20px;}
+.section-title{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;}
+.etapas-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:28px;}
+.etapa-card{border-radius:10px;padding:14px 16px;cursor:pointer;transition:opacity .15s;}
+.etapa-card:hover{opacity:.85;}
+.etapa-card .num{font-size:32px;font-weight:600;line-height:1;}
+.etapa-card .lbl{font-size:11px;margin-top:5px;line-height:1.3;font-weight:500;}
+.depto-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{font-size:11px;font-weight:600;color:#6b7280;text-align:left;padding:0 10px 10px;border-bottom:1px solid #e5e7eb;}
+th.c{text-align:center;}
+td{padding:10px;border-bottom:1px solid #f3f4f6;vertical-align:middle;}
+td.c{text-align:center;font-weight:500;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:#f9fafb;}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;}
+
+/* UPLOAD */
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.upload-box{border:1.5px dashed #d1d5db;border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;background:#fafafa;}
+.upload-box:hover,.upload-box.drag{border-color:#185FA5;background:#EFF6FF;}
+.upload-box .icon{font-size:28px;margin-bottom:8px;}
+.upload-box h3{font-size:13px;font-weight:600;margin-bottom:4px;}
+.upload-box p{font-size:12px;color:#6b7280;}
+.upload-box .etapa-tag{display:inline-block;margin-top:8px;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;}
+.progress-wrap{background:#e5e7eb;border-radius:4px;height:6px;overflow:hidden;margin-bottom:6px;}
+.progress-bar{height:100%;background:#185FA5;border-radius:4px;transition:width .3s;}
+.progress-msg{font-size:12px;color:#6b7280;}
+.success-msg{font-size:13px;font-weight:600;color:#059669;margin-top:8px;}
+.avulso-row{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;padding-top:16px;border-top:1px solid #e5e7eb;}
+.form-group label{display:block;font-size:11px;color:#6b7280;margin-bottom:4px;}
+select,input[type=text]{padding:7px 10px;border-radius:8px;border:1px solid #d1d5db;font-size:13px;font-family:inherit;background:#fff;color:#1a1a1a;}
+select:focus,input:focus{outline:none;border-color:#185FA5;}
+.btn{padding:7px 16px;border-radius:8px;border:1px solid #d1d5db;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;font-weight:500;}
+.btn:hover{background:#f3f4f6;}
+.btn.primary{background:#185FA5;color:#fff;border-color:#185FA5;}
+.btn.primary:hover{background:#0F4A8A;}
+
+/* LISTA */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.filters input{flex:1;min-width:180px;}
+.count-lbl{font-size:12px;color:#6b7280;margin-bottom:10px;}
+.cand-list{display:flex;flex-direction:column;gap:6px;}
+.cand-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid #e5e7eb;cursor:pointer;background:#fff;transition:border-color .15s;}
+.cand-row:hover{border-color:#185FA5;}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#fff;flex-shrink:0;}
+.cand-info{flex:1;min-width:0;}
+.cand-nome{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cand-sub{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;}
+.empty{text-align:center;padding:48px 0;color:#9ca3af;font-size:13px;}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
+.modal{background:#fff;border-radius:16px 16px 0 0;width:100%;max-width:540px;padding:24px;max-height:88vh;overflow-y:auto;}
+.modal-hdr{display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;}
+.modal-avatar{width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px;color:#fff;flex-shrink:0;}
+.modal-nome{font-size:16px;font-weight:600;}
+.modal-cargo{font-size:13px;color:#6b7280;margin-top:2px;}
+.close-btn{margin-left:auto;padding:4px 10px;border-radius:8px;border:1px solid #e5e7eb;background:transparent;cursor:pointer;font-size:13px;font-family:inherit;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.info-cell{background:#f9fafb;border-radius:8px;padding:10px 12px;}
+.info-cell .key{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;}
+.info-cell .val{font-size:13px;word-break:break-all;}
+.resumo-box{background:#f9fafb;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;line-height:1.7;}
+.resumo-key{font-size:10px;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.mover-title{font-size:12px;font-weight:600;color:#6b7280;margin-bottom:8px;}
+.mover-btns{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;}
+.etapa-btn{padding:5px 12px;border-radius:20px;font-size:12px;cursor:pointer;border:1px solid;font-family:inherit;transition:opacity .1s;}
+.etapa-btn:hover{opacity:.8;}
+.btn-del{padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;background:transparent;font-family:inherit;color:#dc2626;border:1px solid #fecaca;}
+.btn-del:hover{background:#fef2f2;}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #e5e7eb;border-top-color:#185FA5;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
+@media(max-width:700px){.etapas-grid{grid-template-columns:repeat(3,1fr);}.upload-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">CIMENTMARE <span>RH</span></div>
+  <div class="header-right">
+    <div class="pulse"></div>
+    <span class="live-label">Atualização em tempo real</span>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="showTab('painel',this)">Painel</button>
+  <button class="tab" onclick="showTab('upload',this)">Importar currículos</button>
+  <button class="tab" onclick="showTab('lista',this)">Candidatos</button>
+</div>
+
+<!-- PAINEL -->
+<div class="content" id="tab-painel">
+  <p class="section-title">Total por etapa</p>
+  <div class="etapas-grid" id="etapas-grid"></div>
+  <p class="section-title">Por departamento</p>
+  <div class="depto-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Departamento</th>
+          <th class="c">Total</th>
+          <th class="c">Banco</th>
+          <th class="c">Chamado</th>
+          <th class="c">Entrevistado</th>
+          <th class="c">Aprovado</th>
+          <th class="c">Analisado</th>
+        </tr>
+      </thead>
+      <tbody id="depto-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div class="content" id="tab-upload" style="display:none;">
+  <div class="upload-grid">
+    <div class="upload-box" id="dz-analisados"
+      onclick="document.getElementById('f-analisados').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="onDrop(event,'analisado')">
+      <div class="icon">📁</div>
+      <h3>Pasta Analisados</h3>
+      <p>Clique ou arraste a pasta inteira</p>
+      <span class="etapa-tag" style="background:#F1EFE8;color:#5F5E5A;">Analisado (arquivo)</span>
+      <p id="cnt-analisados" style="margin-top:8px;font-size:12px;font-weight:600;color:#5F5E5A;"></p>
+    </div>
+    <div class="upload-box" id="dz-banco"
+      onclick="document.getElementById('f-banco').click()"
+      ondragover="event.preventDefault();this.classList.add('drag')"
+      ondragleave="this.classList.remove('drag')"
+      ondrop="onDrop(event,'banco')">
+      <div class="icon">📂</div>
+      <h3>Pasta Banco de talentos</h3>
+      <p>Clique ou arraste a pasta inteira</p>
+      <span class="etapa-tag" style="background:#E6F1FB;color:#185FA5;">Banco de talentos</span>
+      <p id="cnt-banco" style="margin-top:8px;font-size:12px;font-weight:600;color:#185FA5;"></p>
+    </div>
+  </div>
+  <input type="file" id="f-analisados" webkitdirectory multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none"
+    onchange="handleFolder(this.files,'analisado','cnt-analisados')"/>
+  <input type="file" id="f-banco" webkitdirectory multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none"
+    onchange="handleFolder(this.files,'banco','cnt-banco')"/>
+
+  <div id="prog-area" style="display:none;margin-bottom:12px;">
+    <div class="progress-wrap"><div class="progress-bar" id="prog-bar" style="width:0%"></div></div>
+    <p class="progress-msg" id="prog-msg"></p>
+  </div>
+  <p class="success-msg" id="success-msg"></p>
+
+  <div class="avulso-row">
+    <div class="form-group">
+      <label>Departamento</label>
+      <select id="av-depto">
+        <option value="">— Geral —</option>
+        <option>Produção</option><option>Vendas</option><option>ADM</option>
+        <option>RH</option><option>TI</option><option>Qualidade</option>
+        <option>Financeiro</option><option>Logística</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Etapa</label>
+      <select id="av-etapa">
+        <option value="banco">Banco de talentos</option>
+        <option value="chamado">Chamado entrevista</option>
+        <option value="entrevistado">Entrevistado</option>
+        <option value="aprovado">Aprovado</option>
+        <option value="analisado">Analisado</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label style="color:transparent;">_</label>
+      <button class="btn" onclick="document.getElementById('f-avulso').click()">+ Arquivo avulso</button>
+      <input type="file" id="f-avulso" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style="display:none"
+        onchange="handleAvulso(this.files)"/>
+    </div>
+  </div>
+</div>
+
+<!-- LISTA -->
+<div class="content" id="tab-lista" style="display:none;">
+  <div class="filters">
+    <input type="text" id="busca" placeholder="Buscar nome ou cargo..." oninput="renderLista()"/>
+    <select id="fil-depto" onchange="renderLista()">
+      <option value="">Todos departamentos</option>
+      <option>Produção</option><option>Vendas</option><option>ADM</option>
+      <option>RH</option><option>TI</option><option>Qualidade</option>
+      <option>Financeiro</option><option>Logística</option>
+    </select>
+    <select id="fil-etapa" onchange="renderLista()">
+      <option value="">Todas etapas</option>
+      <option value="banco">Banco de talentos</option>
+      <option value="chamado">Chamado entrevista</option>
+      <option value="entrevistado">Entrevistado</option>
+      <option value="aprovado">Aprovado</option>
+      <option value="analisado">Analisado</option>
+    </select>
+  </div>
+  <p class="count-lbl" id="count-lbl"></p>
+  <div class="cand-list" id="cand-list"></div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" style="display:none" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-avatar" id="m-av"></div>
+      <div><div class="modal-nome" id="m-nome"></div><div class="modal-cargo" id="m-cargo"></div></div>
+      <button class="close-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="info-grid" id="m-grid"></div>
+    <div class="resumo-box" id="m-resumo" style="display:none">
+      <div class="resumo-key">Resumo extraído pela IA</div>
+      <div id="m-resumo-txt"></div>
+    </div>
+    <p class="mover-title">Mover para etapa:</p>
+    <div class="mover-btns" id="m-etapas"></div>
+    <button class="btn-del" id="m-del">Remover candidato</button>
+  </div>
+</div>
+
+<script>
+const ETAPAS=[
+  {id:"banco",       label:"Banco de talentos",  cor:"#185FA5",bg:"#E6F1FB"},
+  {id:"chamado",     label:"Chamado entrevista",  cor:"#854F0B",bg:"#FAEEDA"},
+  {id:"entrevistado",label:"Entrevistado",         cor:"#3C3489",bg:"#EEEDFE"},
+  {id:"aprovado",    label:"Aprovado",             cor:"#27500A",bg:"#EAF3DE"},
+  {id:"analisado",   label:"Analisado (arquivo)",  cor:"#5F5E5A",bg:"#F1EFE8"},
+];
+const EM=Object.fromEntries(ETAPAS.map(e=>[e.id,e]));
+const DEPTO_KEYS={"produção":"Produção","producao":"Produção","vendas":"Vendas","comercial":"Vendas","adm":"ADM","administrativo":"ADM","rh":"RH","ti":"TI","tecnologia":"TI","qualidade":"Qualidade","financeiro":"Financeiro","logística":"Logística","logistica":"Logística"};
+const SUBETAPA_KEYS={"chamado entrevista":"chamado","chamado":"chamado","entrevistado":"entrevistado","entrevistados":"entrevistado","aprovado":"aprovado","aprovados":"aprovado"};
+
+let candidatos=[];
+let processando=false;
+let detalheId=null;
+
+function detectDepto(path){
+  const p=path.toLowerCase().replace(/\\/g,"/");
+  for(const parte of p.split("/")){for(const[k,v]of Object.entries(DEPTO_KEYS)){if(parte.includes(k))return v;}}
+  return "";
+}
+function detectSubetapa(path,base){
+  const p=path.toLowerCase().replace(/\\/g,"/");
+  for(const[k,v]of Object.entries(SUBETAPA_KEYS)){if(p.includes(k))return v;}
+  return base;
+}
+
+async function fetchCandidatos(){
+  const r=await fetch("/api/candidatos");
+  candidatos=await r.json();
+  render();
+}
+
+async function postCandidato(payload){
+  const r=await fetch("/api/candidatos",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});
+  return r.json();
+}
+
+async function patchCandidato(id,data){
+  await fetch(`/api/candidatos/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
+  await fetchCandidatos();
+}
+
+async function deleteCandidato(id){
+  await fetch(`/api/candidatos/${id}`,{method:"DELETE"});
+  await fetchCandidatos();
+}
+
+function toBase64(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result.split(",")[1]);r.onerror=rej;r.readAsDataURL(f);});}
+
+async function processarArquivos(files,etapaBase,deptoFixo){
+  const arr=[...files].filter(f=>/\.(pdf|docx?|jpe?g|png)$/i.test(f.name));
+  if(!arr.length)return 0;
+  document.getElementById("prog-area").style.display="block";
+  document.getElementById("success-msg").textContent="";
+  for(let i=0;i<arr.length;i++){
+    const f=arr[i];
+    const rel=f.webkitRelativePath||f.name;
+    const depto=deptoFixo!==undefined?deptoFixo:detectDepto(rel);
+    const etapa=detectSubetapa(rel,etapaBase);
+    const pct=Math.round(((i+1)/arr.length)*100);
+    document.getElementById("prog-bar").style.width=pct+"%";
+    document.getElementById("prog-msg").textContent=`Processando ${i+1}/${arr.length}: ${f.name}`;
+    const b64=await toBase64(f);
+    await postCandidato({
+      filename:f.name,caminho:rel,
+      ext:f.name.split(".").pop().toLowerCase(),
+      departamento:depto,etapa,
+      adicionado:new Date().toLocaleDateString("pt-BR"),
+      base64:b64
+    });
+  }
+  document.getElementById("prog-area").style.display="none";
+  await fetchCandidatos();
+  return arr.length;
+}
+
+async function handleFolder(files,etapaBase,cntId){
+  if(processando)return;processando=true;
+  const n=await processarArquivos(files,etapaBase,undefined);
+  document.getElementById(cntId).textContent=n+" arquivo"+(n!==1?"s")+" importado"+(n!==1?"s":"");
+  document.getElementById("success-msg").textContent=`✓ ${n} currículo${n!==1?"s":""} adicionado${n!==1?"s":""}!`;
+  processando=false;
+}
+
+async function handleAvulso(files){
+  if(processando||!files.length)return;processando=true;
+  const depto=document.getElementById("av-depto").value;
+  const etapa=document.getElementById("av-etapa").value;
+  const n=await processarArquivos(files,etapa,depto||"");
+  document.getElementById("success-msg").textContent=`✓ ${n} currículo${n!==1?"s":""} adicionado${n!==1?"s":""}!`;
+  document.getElementById("f-avulso").value="";
+  processando=false;
+}
+
+function onDrop(e,etapaBase){
+  e.preventDefault();e.currentTarget.classList.remove("drag");
+  const items=[...e.dataTransfer.items];
+  const ps=items.map(item=>{const en=item.webkitGetAsEntry&&item.webkitGetAsEntry();return en?readEntry(en):Promise.resolve([item.getAsFile()].filter(Boolean));});
+  Promise.all(ps).then(async groups=>{
+    const all=groups.flat().filter(f=>f&&/\.(pdf|docx?|jpe?g|png)$/i.test(f.name));
+    if(!all.length||processando)return;processando=true;
+    document.getElementById("prog-area").style.display="block";
+    for(let i=0;i<all.length;i++){
+      const f=all[i];const rel=f._path||f.name;
+      document.getElementById("prog-bar").style.width=Math.round(((i+1)/all.length)*100)+"%";
+      document.getElementById("prog-msg").textContent=`Processando ${i+1}/${all.length}: ${f.name}`;
+      const b64=await toBase64(f);
+      await postCandidato({filename:f.name,caminho:rel,ext:f.name.split(".").pop().toLowerCase(),departamento:detectDepto(rel),etapa:detectSubetapa(rel,etapaBase),adicionado:new Date().toLocaleDateString("pt-BR"),base64:b64});
+    }
+    document.getElementById("prog-area").style.display="none";
+    document.getElementById("success-msg").textContent=`✓ ${all.length} importado${all.length!==1?"s":""}!`;
+    await fetchCandidatos();processando=false;
+  });
+}
+function readEntry(entry){return new Promise(res=>{if(entry.isFile){entry.file(f=>{f._path=entry.fullPath;res([f]);});}else if(entry.isDirectory){const reader=entry.createReader();const all=[];function read(){reader.readEntries(entries=>{if(!entries.length)Promise.all(all.map(e=>readEntry(e))).then(g=>res(g.flat()));else{entries.forEach(e=>all.push(e));read();}});}read();}else res([]);});}
+
+function render(){renderPainel();renderLista();}
+
+function renderPainel(){
+  document.getElementById("etapas-grid").innerHTML=ETAPAS.map(e=>{
+    const n=candidatos.filter(c=>c.etapa===e.id).length;
+    return`<div class="etapa-card" style="background:${e.bg}" onclick="setFiltroEtapa('${e.id}')">
+      <div class="num" style="color:${e.cor}">${n}</div>
+      <div class="lbl" style="color:${e.cor}">${e.label}</div>
+    </div>`;
+  }).join("");
+  const deptos=[...new Set(candidatos.map(c=>c.departamento).filter(Boolean))].sort();
+  const sem=candidatos.filter(c=>!c.departamento);
+  let rows=deptos.map(d=>{
+    const tot=candidatos.filter(c=>c.departamento===d).length;
+    const cols=ETAPAS.map(e=>{const n=candidatos.filter(c=>c.departamento===d&&c.etapa===e.id).length;return`<td class="c">${n||"—"}</td>`;}).join("");
+    return`<tr><td><strong>${esc(d)}</strong></td><td class="c">${tot}</td>${cols}</tr>`;
+  }).join("");
+  if(sem.length){const cols=ETAPAS.map(e=>{const n=sem.filter(c=>c.etapa===e.id).length;return`<td class="c">${n||"—"}</td>`;}).join("");rows+=`<tr><td style="color:#9ca3af">Sem departamento</td><td class="c">${sem.length}</td>${cols}</tr>`;}
+  document.getElementById("depto-body").innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum candidato ainda — vá em "Importar currículos"</td></tr>`;
+}
+
+function renderLista(){
+  const busca=(document.getElementById("busca")?.value||"").toLowerCase();
+  const fd=document.getElementById("fil-depto")?.value||"";
+  const fe=document.getElementById("fil-etapa")?.value||"";
+  const lista=candidatos.filter(c=>{
+    if(fd&&c.departamento!==fd)return false;
+    if(fe&&c.etapa!==fe)return false;
+    if(busca&&!c.nome?.toLowerCase().includes(busca)&&!c.cargo?.toLowerCase().includes(busca))return false;
+    return true;
+  });
+  const cl=document.getElementById("cand-list");if(!cl)return;
+  document.getElementById("count-lbl").textContent=lista.length+" candidato"+(lista.length!==1?"s":"");
+  if(!lista.length){cl.innerHTML=`<div class="empty">Nenhum resultado encontrado</div>`;return;}
+  cl.innerHTML=lista.map(c=>{
+    const e=EM[c.etapa]||ETAPAS[0];
+    return`<div class="cand-row" onclick="openModal('${c.id}')">
+      <div class="avatar" style="background:${avatarCor(c.nome)}">${initials(c.nome)}</div>
+      <div class="cand-info">
+        <div class="cand-nome">${esc(c.nome||c.filename)}</div>
+        <div class="cand-sub">${esc(c.cargo||"—")} · ${esc(c.departamento||"Sem departamento")}</div>
+      </div>
+      <span class="badge" style="background:${e.bg};color:${e.cor};border:1px solid ${e.cor}30">${e.label}</span>
+    </div>`;
+  }).join("");
+}
+
+function setFiltroEtapa(etapaId){
+  document.getElementById("fil-etapa").value=etapaId;
+  showTab("lista",document.querySelectorAll(".tab")[2]);
+  renderLista();
+}
+
+function openModal(id){
+  const c=candidatos.find(x=>x.id===id);if(!c)return;detalheId=id;
+  const e=EM[c.etapa]||ETAPAS[0];
+  document.getElementById("m-av").style.background=avatarCor(c.nome);
+  document.getElementById("m-av").textContent=initials(c.nome);
+  document.getElementById("m-nome").textContent=c.nome||c.filename;
+  document.getElementById("m-cargo").textContent=(c.cargo||"—")+" · "+(c.departamento||"Sem departamento");
+  document.getElementById("m-grid").innerHTML=[
+    ["Etapa",`<span class="badge" style="background:${e.bg};color:${e.cor}">${e.label}</span>`],
+    ["Departamento",esc(c.departamento||"—")],
+    ["E-mail",esc(c.email||"—")],["Telefone",esc(c.telefone||"—")],
+    ["Adicionado",esc(c.adicionado||"—")],["Arquivo",esc(c.filename||"—")]
+  ].map(([k,v])=>`<div class="info-cell"><div class="key">${k}</div><div class="val">${v}</div></div>`).join("");
+  const rb=document.getElementById("m-resumo");
+  if(c.resumo){rb.style.display="block";document.getElementById("m-resumo-txt").textContent=c.resumo;}else rb.style.display="none";
+  document.getElementById("m-etapas").innerHTML=ETAPAS.map(et=>`<button class="etapa-btn" onclick="moverEtapa('${c.id}','${et.id}')"
+    style="background:${c.etapa===et.id?et.bg:'transparent'};color:${c.etapa===et.id?et.cor:'#6b7280'};border-color:${c.etapa===et.id?et.cor:'#d1d5db'};font-weight:${c.etapa===et.id?600:400}">${et.label}</button>`).join("");
+  document.getElementById("m-del").onclick=()=>confirmarRemover(id);
+  document.getElementById("overlay").style.display="flex";
+}
+function closeModal(){document.getElementById("overlay").style.display="none";}
+async function moverEtapa(id,nova){await patchCandidato(id,{etapa:nova});openModal(id);}
+async function confirmarRemover(id){if(!confirm("Remover este candidato permanentemente?"))return;await deleteCandidato(id);closeModal();}
+
+function showTab(name,btn){
+  ["painel","upload","lista"].forEach(t=>{document.getElementById("tab-"+t).style.display=t===name?"block":"none";});
+  document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
+  btn.classList.add("active");
+  if(name==="lista")renderLista();
+}
+
+function initials(n){return(n||"?").split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase();}
+function avatarCor(n){const c=["#185FA5","#3C3489","#0F6E56","#993C1D","#854F0B","#993556","#5F5E5A","#1D9E75"];let h=0;for(const x of(n||""))h=(h*31+x.charCodeAt(0))%c.length;return c[h];}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+// Auto-refresh a cada 30 segundos
+fetchCandidatos();
+setInterval(fetchCandidatos,30000);
+</script>
+</body>
+</html>
