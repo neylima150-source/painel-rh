@@ -249,7 +249,7 @@ const ETAPAS=[
   {id:"analisado",   label:"Analisado (arquivo)",  cor:"#5F5E5A",bg:"#F1EFE8"},
 ];
 const EM=Object.fromEntries(ETAPAS.map(e=>[e.id,e]));
-const DEPTO_KEYS={"producao":"Producao","producao":"Produção","vendas":"Vendas","comercial":"Vendas","adm":"ADM","administrativo":"ADM","rh":"RH","ti":"TI","tecnologia":"TI","qualidade":"Qualidade","financeiro":"Financeiro","logistica":"Logistica","logistica":"Logística"};
+const DEPTO_KEYS={"producao":"Producao","producao":"Producao","vendas":"Vendas","comercial":"Vendas","adm":"ADM","administrativo":"ADM","rh":"RH","ti":"TI","tecnologia":"TI","qualidade":"Qualidade","financeiro":"Financeiro","logistica":"Logistica","logistica":"Logistica"};
 const SUBETAPA_KEYS={"chamado entrevista":"chamado","chamado":"chamado","entrevistado":"entrevistado","entrevistados":"entrevistado","aprovado":"aprovado","aprovados":"aprovado"};
 
 let candidatos=[];
@@ -375,7 +375,7 @@ function renderPainel(){
     return`<tr><td><strong>${esc(d)}</strong></td><td class="c">${tot}</td>${cols}</tr>`;
   }).join("");
   if(sem.length){const cols=ETAPAS.map(e=>{const n=sem.filter(c=>c.etapa===e.id).length;return`<td class="c">${n||"---"}</td>`;}).join("");rows+=`<tr><td style="color:#9ca3af">Sem departamento</td><td class="c">${sem.length}</td>${cols}</tr>`;}
-  document.getElementById("depto-body").innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum candidato ainda — vá em "Importar curriculos"</td></tr>`;
+  document.getElementById("depto-body").innerHTML=rows||`<tr><td colspan="7" style="text-align:center;padding:32px;color:#9ca3af;">Nenhum candidato ainda - va em "Importar curriculos"</td></tr>`;
 }
 
 function renderLista(){
@@ -397,7 +397,7 @@ function renderLista(){
       <div class="avatar" style="background:${avatarCor(c.nome)}">${initials(c.nome)}</div>
       <div class="cand-info">
         <div class="cand-nome">${esc(c.nome||c.filename)}</div>
-        <div class="cand-sub">${esc(c.cargo||"---")} · ${esc(c.departamento||"Sem departamento")}</div>
+        <div class="cand-sub">${esc(c.cargo||"---")} - ${esc(c.departamento||"Sem departamento")}</div>
       </div>
       <span class="badge" style="background:${e.bg};color:${e.cor};border:1px solid ${e.cor}30">${e.label}</span>
     </div>`;
