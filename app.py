@@ -43,16 +43,16 @@ def sb_delete(table, record_id):
                      params={"id": f"eq.{record_id}"}, timeout=15)
     r.raise_for_status()
 
-def file_exists(filename):
+def get_existing(filename):
     try:
         result = sb_get("candidatos", {
             "filename": f"eq.{filename}",
-            "select": "id",
+            "select": "id,sexo,cidade,idade",
             "limit": "1"
         })
-        return len(result) > 0
+        return result[0] if result else None
     except:
-        return False
+        return None
 
 def extract_with_ai(base64_data, filename):
     ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else ""
@@ -102,10 +102,9 @@ def add_candidato():
         base64_data = payload.pop("base64", None)
         filename = payload.get("filename", "arquivo")
 
-        if file_exists(filename):
-            print(f"Duplicate skipped: {filename}")
-            return jsonify({"skipped": True, "filename": filename}), 200
-
+        # Verifica se já existe
+        existing = get_existing(filename)
+        
         info = {}
         if base64_data:
             try:
@@ -117,14 +116,31 @@ def add_candidato():
         if not isinstance(idade, int) or idade <= 0:
             idade = None
 
+        sexo = info.get("sexo") or "desconhecido"
+        cidade = info.get("cidade") or "-"
+
+        # Se já existe, atualiza só os campos faltantes
+        if existing:
+            update_data = {}
+            if not existing.get("sexo") or existing.get("sexo") in ("desconhecido", "-", ""):
+                update_data["sexo"] = sexo
+            if not existing.get("cidade") or existing.get("cidade") in ("-", ""):
+                update_data["cidade"] = cidade
+            if not existing.get("idade") and idade:
+                update_data["idade"] = idade
+            if update_data:
+                sb_patch("candidatos", existing["id"], update_data)
+                print(f"Updated: {filename} -> {update_data}")
+            return jsonify({"updated": True, "filename": filename}), 200
+
         payload.update({
             "nome":     info.get("nome") or filename.rsplit(".", 1)[0],
             "email":    info.get("email") or "-",
             "telefone": info.get("telefone") or "-",
             "cargo":    info.get("cargo") or "-",
             "resumo":   info.get("resumo") or "",
-            "sexo":     info.get("sexo") or "desconhecido",
-            "cidade":   info.get("cidade") or "-",
+            "sexo":     sexo,
+            "cidade":   cidade,
             "idade":    idade,
         })
 
