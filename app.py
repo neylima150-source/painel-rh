@@ -201,3 +201,132 @@ def get_stats():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
+# ── Detecção de sexo por nome ──────────────────────────────────────────────
+
+NOMES_M = set("""joao jose carlos antonio francisco paulo pedro lucas gabriel
+rafael daniel marcos luis felipe andre rodrigo fernando fabio leonardo
+mateus vitor guilherme igor thiago leandro marcelo samuel alan alex
+anderson bruno cesar claudio cristiano davi diego edson eduardo elvis
+emerson erick evandro ezequiel fabricio gilberto gustavo henrique hugo
+ivan jorge julio junior luan mauro maxwell messias michel murilo natanael
+neto newton nilson omar oscar paulo pedro rafael ramiro renan renato
+ricardo roberto robson rodrigo rogerio ruan ruben saulo sergio silas
+silvio tiago vinicius wagner walter wellington wellington wendell willian
+william alex alexandre alexsander alfredo alisson anderson andre
+antonio artur augusto benicio benjamin bernardo beto brayan brenno caio
+caleb camilo cassio cauã claudio cleber cleiton cleto clovis cristobal
+davi deyson diego dirceu donizete edimilson edilson ednaldo edson edvaldo
+enzo eraldo erick ezequiel fabrício fellipe fernado francisco frederico
+gabriel gean gedeon geovane gilson giovani giovanny giovanni glauber
+gleison gleidson gledson gledione graciliano gregor gustavo henrique
+heitor helton hiago humberto igor isaque ivan jackson jairo janderson
+janeudo janio jefferson jeferson jhonas jhonatan joab joaquim joel
+jonatan jonas jonathan jorge josias josiel juarez juliao julio kaio
+kauã kelvin kesley kevin kleber kleberson kleyton levi leandro leonardo
+leogildo leonardo levi lucas lucio luiz lukas lumack luiz luan macedonio
+marcelo marcio mario matheus mauro maxwell maycon melquisedeque messias
+michell milson misael moises murilo natan nathan nem neemias nicolas
+nilton norberto odair odilon odilon odones oilson olavo olimpio omar
+osiris osmar osvaldo otavio pablo pantaliao pascal pericles perseu
+phelipe philipe priscilo rafael railson ramiro ramom ramsés raner raul
+reginaldo reinaldo renan renato ribamar richard rivaldo roberto robson
+rodrigo rogerio romario romulo ronaldo roney ronieri roque rorys ruben
+rubens samuel saul saulo savio sergio silvano silverio silvio simiao
+sinivaldo sirley sirlei stive tainã tainã talles tarcisio tasio tawan
+thiago tiago tito tobias tomaz tulio vagner valdecir valdecir valdemiro
+valdir valter vanderlei vinicius vitor walace walber waldimir waldix
+walisson walmor wanderlei washington welinton welison welton wender
+wenderson weslei wessley widson wilder wilington willians willians
+william yago yuri zeus""".split())
+
+NOMES_F = set("""maria ana paula fernanda patricia juliana sandra camila
+beatriz carolina amanda larissa leticia mariana aline gabriela jessica
+raquel luciana denise cristina claudia adriana helena vanessa isabela
+natalia bianca simone tatiane elaine viviane kelly jaqueline luana
+priscila micheli bruna renata andreia debora daiane fabiana michele
+luciene rosana rosangela roseli roseli silvia silvana sueli suely
+tais tamara tamiris tatiana thais thainá thainara thainá valentina
+veridiana veronica vivian viviane walquiria wanderléa wanessa wanuza
+welinete wendy wendeline wesline wilma yara yasmin zelia zenaide
+abigail agatha agnes alessandra alicia aline alícia aliona aloisia
+amelia ana anacleia anailda analice ananda anavia andréia angela anice
+anielze anita anisia anjanuara anna annick anny antonia antonieta arlete
+augustinha aurea aurelia aurora auxiliadora beatriz berenice betânia
+bianca brenda bruna brunela camilla carla carlota carmem cassandra cátia
+célia celida celina christiane cibele cida cidinha cinara cintia claire
+claudete claudia claúdia cleonice cleria cleudes cleuza clia conceição
+consuelo cora cristiane cristina cyntia dagmar daiane dalva damaris
+damiana dania daniela danielle dara dayane débora deise dejanara delci
+delmira diana dinalva diva dolores domingas doralice dulce dulcineia
+ecléia edinha edite edmara edna edvanilda elaine eliana eliene elisa
+elise elizabete elizangela elizete ellen elly eloisa elza emilia emiliana
+enedina erika ester esther eugenia eunice evandra evangelina eveli evelyn
+ezilda fabiana fabiola fatima fernanda filomena flavinha flavia franci
+francisca francielly franciele francesca gabi genizia geovana geovanna
+gerlane girlane gisele gislaine gloria graça graciela graziela grazielle
+haidê helenice heloisa heloísa hortencia iara idalia ilca ilza iolanda
+iracema iraci iraides irani irinéia iris irma isabel isadora isadora
+isadora ivana ivanete ivanice ivete ivone jacinta jaqueline jasmine jéssica
+joana jocelia joelma josefa josiane josimar jovita judith julia juliana
+juliane julieta junara karina karla katia kátia keila kelly kely ketlin
+laiane laísa lalesca laura lavinia layane leandro leanne lelia lena leonora
+leticia lidia liège lilian liliane linda lindinalva liz loide lourdes luana
+luanna lucia luciana luciene lucilene lucimara lucineia lucineide luise
+lurdes luzia luzia luzimar madalena madeja maira manuela marcela marcia
+margarida maria marialva mariangela marianne marilene marilia mariluce
+mariluci mariluz marina marise marisete maritê mariza marlene marli marluci
+marluse marly marta marusa mary massilon mayara mayrla melina melissa
+meire meiriane micheli michelline mikaela milena mileidy miriam mirian
+missangela mônica morena muriele nádia natalia natalina nathalia nathaly
+nayara neide neila neuza nicoly nicole nina noemi nora norma odete olga
+olinda olusegun ondina paloma pamela pandora paola patricia paty paula
+paulina pauline perla petronilha pietra porfiria priscila priscilla
+queila quezia quilma quimia rachel rafaela raimunda raissa ramona ranielle
+raquel rebeca reinalda renata renate rita roana roberta rosi rosana rosane
+rosangela rosaria rose roseli rosemeire roseni rosenir rosiane rosimara
+rosimar rosimeira rosinei rosinéia rossana ruth sabrina samara samira
+sandra sania sara sarah selma silvana silvanete silvaneide silvia simone
+sionara sirlei sirley solange sonia sueli suely susana susane suseli
+tainá tainara talita tamara tana tania tatiana terezinha thais thalita
+thalia thamara thifani thifany uiara valdete valeria valéria valnice
+valquíria vanessa vania vânia vanilda vera veronica vicencia vilma
+virginia viviane waldineia waleska walesca walkyria wanessa wania wardinha
+yasmin yolanda yolanda zaira zenilda zélia zilka zilma zilmira zita""".split())
+
+def inferir_sexo_por_nome(nome):
+    if not nome:
+        return "desconhecido"
+    primeiro = nome.strip().split()[0].lower()
+    # Remove acentos simples para comparação
+    import unicodedata
+    primeiro_sem_acento = ''.join(
+        c for c in unicodedata.normalize('NFD', primeiro)
+        if unicodedata.category(c) != 'Mn'
+    )
+    if primeiro_sem_acento in NOMES_M or primeiro in NOMES_M:
+        return "M"
+    if primeiro_sem_acento in NOMES_F or primeiro in NOMES_F:
+        return "F"
+    return "desconhecido"
+
+
+@app.route("/api/atualizar-sexo", methods=["POST"])
+def atualizar_sexo():
+    """Atualiza sexo de todos os candidatos sem sexo definido usando o nome."""
+    try:
+        candidatos = sb_get("candidatos", {
+            "select": "id,nome,sexo",
+            "limit": "2000"
+        })
+        atualizados = 0
+        for c in candidatos:
+            if c.get("sexo") in (None, "", "desconhecido", "-"):
+                sexo = inferir_sexo_por_nome(c.get("nome",""))
+                if sexo != "desconhecido":
+                    sb_patch("candidatos", c["id"], {"sexo": sexo})
+                    atualizados += 1
+        return jsonify({"ok": True, "atualizados": atualizados})
+    except Exception as e:
+        print(f"ATUALIZAR-SEXO error: {e}")
+        return jsonify({"error": str(e)}), 500
