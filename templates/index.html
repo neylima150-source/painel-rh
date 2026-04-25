@@ -92,6 +92,7 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
 @keyframes spin{to{transform:rotate(360deg);}}
 @media(max-width:700px){.etapas-grid{grid-template-columns:repeat(3,1fr);}.upload-grid{grid-template-columns:1fr;}}
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 </head>
 <body>
 
@@ -105,6 +106,7 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('painel',this)">Painel</button>
+  <button class="tab" onclick="showTab('dash',this)">Dashboards</button>
   <button class="tab" onclick="showTab('upload',this)">Importar curriculos</button>
   <button class="tab" onclick="showTab('lista',this)">Candidatos</button>
 </div>
@@ -129,6 +131,29 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
       </thead>
       <tbody id="depto-body"></tbody>
     </table>
+  </div>
+</div>
+
+
+<!-- DASHBOARDS -->
+<div class="content" id="tab-dash" style="display:none;">
+  <p class="section-title">Indicadores de selecao</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:24px;" id="dash-kpis"></div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+      <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Curriculos por sexo</p>
+      <canvas id="chart-sexo" height="180"></canvas>
+    </div>
+    <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+      <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Faixa etaria</p>
+      <canvas id="chart-idade" height="180"></canvas>
+    </div>
+  </div>
+
+  <div style="background:#f9fafb;border-radius:12px;padding:16px;">
+    <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Top 10 cidades</p>
+    <canvas id="chart-cidades" height="200"></canvas>
   </div>
 </div>
 
@@ -435,15 +460,70 @@ async function moverEtapa(id,nova){await patchCandidato(id,{etapa:nova});openMod
 async function confirmarRemover(id){if(!confirm("Remover este candidato permanentemente?"))return;await deleteCandidato(id);closeModal();}
 
 function showTab(name,btn){
-  ["painel","upload","lista"].forEach(t=>{document.getElementById("tab-"+t).style.display=t===name?"block":"none";});
+  ["painel","dash","upload","lista"].forEach(t=>{document.getElementById("tab-"+t).style.display=t===name?"block":"none";});
   document.querySelectorAll(".tab").forEach(b=>b.classList.remove("active"));
   btn.classList.add("active");
   if(name==="lista")renderLista();
+  if(name==="dash")loadDash();
 }
 
 function initials(n){return(n||"?").split(" ").slice(0,2).map(w=>w[0]||"").join("").toUpperCase();}
 function avatarCor(n){const c=["#185FA5","#3C3489","#0F6E56","#993C1D","#854F0B","#993556","#5F5E5A","#1D9E75"];let h=0;for(const x of(n||""))h=(h*31+x.charCodeAt(0))%c.length;return c[h];}
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+
+// ── DASHBOARDS ──
+let chartSexo=null, chartIdade=null, chartCidades=null;
+
+async function loadDash(){
+  try{
+    const r=await fetch("/api/stats");
+    const s=await r.json();
+    if(!s||!s.total)return;
+
+    // KPIs
+    document.getElementById("dash-kpis").innerHTML=[
+      ["Total de curriculos",s.total,"#185FA5","#E6F1FB"],
+      ["Chamados p/ entrevista",s.entrevistados,"#854F0B","#FAEEDA"],
+      ["Taxa de entrevista",s.taxa_entrevista+"%","#3C3489","#EEEDFE"],
+      ["Aprovados",s.aprovados,"#27500A","#EAF3DE"],
+      ["Taxa de aprovacao",s.taxa_aprovacao+"%","#185FA5","#E6F1FB"],
+      ["Idade media",s.media_idade+" anos","#854F0B","#FAEEDA"],
+    ].map(([l,v,cor,bg])=>`<div style="background:${bg};border-radius:10px;padding:14px 16px;">
+      <p style="font-size:11px;color:${cor};font-weight:500;margin-bottom:4px;">${l}</p>
+      <p style="font-size:26px;font-weight:600;color:${cor};line-height:1;">${v}</p>
+    </div>`).join("");
+
+    // Sexo
+    if(chartSexo)chartSexo.destroy();
+    chartSexo=new Chart(document.getElementById("chart-sexo"),{
+      type:"doughnut",
+      data:{labels:["Masculino","Feminino","Nao informado"],
+        datasets:[{data:[s.sexo.M,s.sexo.F,s.sexo.outro],
+          backgroundColor:["#185FA5","#D4537E","#9ca3af"],borderWidth:0}]},
+      options:{plugins:{legend:{position:"bottom"}},cutout:"60%"}
+    });
+
+    // Idade
+    const fi=s.faixas_idade;
+    if(chartIdade)chartIdade.destroy();
+    chartIdade=new Chart(document.getElementById("chart-idade"),{
+      type:"bar",
+      data:{labels:Object.keys(fi),
+        datasets:[{data:Object.values(fi),backgroundColor:"#185FA5",borderRadius:6}]},
+      options:{plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+    });
+
+    // Cidades
+    if(chartCidades)chartCidades.destroy();
+    chartCidades=new Chart(document.getElementById("chart-cidades"),{
+      type:"bar",
+      data:{labels:s.cidades.map(c=>c[0]),
+        datasets:[{data:s.cidades.map(c=>c[1]),backgroundColor:"#3C3489",borderRadius:6}]},
+      options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
+    });
+  }catch(e){console.error("Dash error",e);}
+}
 
 // Auto-refresh a cada 30 segundos
 fetchCandidatos();
