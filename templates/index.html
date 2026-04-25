@@ -142,7 +142,10 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
     <div style="background:#f9fafb;border-radius:12px;padding:16px;">
-      <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Curriculos por sexo</p>
+      <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+      <button onclick="atualizarSexo()" id="btn-atualizar-sexo" style="font-size:12px;padding:5px 12px;border-radius:8px;border:1px solid #d1d5db;background:#fff;cursor:pointer;font-family:inherit;">Atualizar sexo pelo nome</button>
+    </div>
+    <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Curriculos por sexo</p>
       <canvas id="chart-sexo" height="180"></canvas>
     </div>
     <div style="background:#f9fafb;border-radius:12px;padding:16px;">
@@ -473,6 +476,16 @@ function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").
 
 
 // ── DASHBOARDS ──
+async function atualizarSexo(){
+  const btn=document.getElementById("btn-atualizar-sexo");
+  btn.textContent="Atualizando...";btn.disabled=true;
+  try{
+    const r=await fetch("/api/atualizar-sexo",{method:"POST"});
+    const d=await r.json();
+    btn.textContent=d.atualizados+" atualizados!";
+    setTimeout(()=>{btn.textContent="Atualizar sexo pelo nome";btn.disabled=false;loadDash();},2000);
+  }catch(e){btn.textContent="Erro";btn.disabled=false;}
+}
 let chartSexo=null, chartIdade=null, chartCidades=null;
 
 async function loadDash(){
