@@ -155,8 +155,14 @@ select:focus,input:focus{outline:none;border-color:#185FA5;}
   </div>
 
   <div style="background:#f9fafb;border-radius:12px;padding:16px;">
-    <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Top 10 cidades</p>
+    <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Top 3 cidades</p>
     <canvas id="chart-cidades" height="200"></canvas>
+  </div>
+
+  <div style="background:#f9fafb;border-radius:12px;padding:16px;margin-top:16px;">
+    <p style="font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;">Tempo medio de permanencia por setor</p>
+    <p style="font-size:11px;color:#9ca3af;margin-bottom:12px;" id="total-historicos"></p>
+    <canvas id="chart-permanencia" height="220"></canvas>
   </div>
 </div>
 
@@ -488,6 +494,8 @@ async function atualizarSexo(){
 }
 let chartSexo=null, chartIdade=null, chartCidades=null;
 
+let chartPermanencia=null;
+
 async function loadDash(){
   try{
     const r=await fetch("/api/stats");
@@ -535,6 +543,40 @@ async function loadDash(){
         datasets:[{data:s.cidades.map(c=>c[1]),backgroundColor:"#3C3489",borderRadius:6}]},
       options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{beginAtZero:true}}}
     });
+
+    // Permanencia por setor
+    const th=document.getElementById("total-historicos");
+    if(th)th.textContent=s.total_historicos+" registros de emprego analisados";
+    if(s.media_por_setor && Object.keys(s.media_por_setor).length>0){
+      const setorLabels=Object.keys(s.media_por_setor).map(s=>s.charAt(0).toUpperCase()+s.slice(1));
+      const setorData=Object.values(s.media_por_setor);
+      if(chartPermanencia)chartPermanencia.destroy();
+      chartPermanencia=new Chart(document.getElementById("chart-permanencia"),{
+        type:"bar",
+        data:{
+          labels:setorLabels,
+          datasets:[{
+            label:"Media de meses",
+            data:setorData,
+            backgroundColor:["#185FA5","#3C3489","#27500A","#854F0B","#D4537E","#5F5E5A","#0F6E56","#993C1D"],
+            borderRadius:6
+          }]
+        },
+        options:{
+          plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+            const m=ctx.raw;
+            const anos=Math.floor(m/12);
+            const meses=m%12;
+            return anos>0?anos+"a "+meses+"m ("+m+" meses)":m+" meses";
+          }}}},
+          scales:{y:{beginAtZero:true,title:{display:true,text:"Meses"}}}
+        }
+      });
+    } else {
+      const el=document.getElementById("chart-permanencia");
+      if(el){const ctx=el.getContext("2d");ctx.clearRect(0,0,el.width,el.height);}
+      if(th)th.textContent+=" — Reimporte os curriculos para extrair historico de empregos";
+    }
   }catch(e){console.error("Dash error",e);}
 }
 
