@@ -186,7 +186,7 @@ def get_stats():
             cidade = c.get("cidade") or "-"
             if cidade and cidade != "-":
                 cidades[cidade] = cidades.get(cidade, 0) + 1
-        cidades_sorted = sorted(cidades.items(), key=lambda x: x[1], reverse=True)[:10]
+        cidades_sorted = sorted(cidades.items(), key=lambda x: x[1], reverse=True)[:3]
 
         # Idades
         idades = [c.get("idade") for c in data if c.get("idade") and isinstance(c.get("idade"), int) and c.get("idade") > 0]
